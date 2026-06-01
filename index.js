@@ -47,20 +47,20 @@ client.once('ready', async () => {
   }
 });
 
-client.on('interactionCreate', async (interaction) => {
+client.on('interactionCreate', (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== 'announce') return;
+  handleAnnounce(interaction);
+});
 
+async function handleAnnounce(interaction) {
+  // Reply FIRST before anything else
   await interaction.reply({ content: '📨 Sending DMs, please wait...', ephemeral: true });
 
   const rawMessage = interaction.options.getString('message').replace(/\\n/g, '\n');
-  const role       = interaction.options.getRole('role');
-  const guild      = interaction.guild;
+  const role = interaction.options.getRole('role');
+  const guild = interaction.guild;
 
-  try {
-    await guild.members.fetch();
-  } catch (err) {
-    return interaction.editReply('❌ Failed to fetch members. Check that Server Members Intent is enabled in the Discord Developer Portal.');
-  }
+  await guild.members.fetch();
 
   const members = guild.members.cache.filter(m => {
     if (m.user.bot) return false;
@@ -93,11 +93,10 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   const targetLabel = role ? `**${role.name}** members` : 'all server members';
-
   await interaction.editReply(
-    `✅ Done! Sent to ${targetLabel}.\n📬 **${sent}** delivered · ❌ **${failed}** couldn't be reached (DMs disabled)`
+    `✅ Done! Sent to ${targetLabel}.\n📬 **${sent}** delivered · ❌ **${failed}** couldn't be reached`
   );
-});
+}
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
