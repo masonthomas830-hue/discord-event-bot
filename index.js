@@ -49,12 +49,12 @@ client.once('ready', async () => {
 
 client.on('interactionCreate', (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== 'announce') return;
-  handleAnnounce(interaction);
+  handleAnnounce(interaction).catch(console.error);
 });
 
 async function handleAnnounce(interaction) {
-  // Reply FIRST before anything else
-  await interaction.reply({ content: '📨 Sending DMs, please wait...', ephemeral: true });
+  // deferReply gives us 15 minutes instead of 3 seconds
+  await interaction.deferReply({ ephemeral: true });
 
   const rawMessage = interaction.options.getString('message').replace(/\\n/g, '\n');
   const role = interaction.options.getRole('role');
