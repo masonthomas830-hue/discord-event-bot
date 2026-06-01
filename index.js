@@ -22,18 +22,9 @@ const commands = [
         .setRequired(true)
         .setMaxLength(1800)
     )
-    .addStringOption(opt =>
-      opt.setName('target')
-        .setDescription('Who to send the DM to')
-        .setRequired(true)
-        .addChoices(
-          { name: '🌐 Everyone in the server', value: 'everyone' },
-          { name: '🛡️ Specific role (use the role option below)', value: 'role' },
-        )
-    )
     .addRoleOption(opt =>
       opt.setName('role')
-        .setDescription('Pick a role to DM (only used if target is "Specific role")')
+        .setDescription('Pick a role to DM — leave empty to DM everyone')
         .setRequired(false)
     )
     .toJSON(),
@@ -59,32 +50,26 @@ client.once('ready', async () => {
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== 'announce') return;
 
-  await interaction.reply({ content: '📨 Sending DMs...', ephemeral: true });
+  await interaction.reply({ content: '📨 Sending DMs, please wait...', ephemeral: true });
 
   const rawMessage = interaction.options.getString('message').replace(/\\n/g, '\n');
-  const target     = interaction.options.getString('target');
+  const role       = interaction.options.getRole('role');
   const guild      = interaction.guild;
 
   try {
     await guild.members.fetch();
   } catch (err) {
-    return interaction.editReply('❌ Failed to fetch members. Make sure the bot has the Server Members Intent enabled.');
+    return interaction.editReply('❌ Failed to fetch members. Check that Server Members Intent is enabled in the Discord Developer Portal.');
   }
 
-  let members;
-
-  if (target === 'everyone') {
-    members = guild.members.cache.filter(m => !m.user.bot);
-  } else {
-    const role = interaction.options.getRole('role');
-    if (!role) {
-      return interaction.editReply('❌ Please pick a role using the **role** option when using "Specific role" target.');
-    }
-    members = guild.members.cache.filter(m => !m.user.bot && m.roles.cache.has(role.id));
-  }
+  const members = guild.members.cache.filter(m => {
+    if (m.user.bot) return false;
+    if (role) return m.roles.cache.has(role.id);
+    return true;
+  });
 
   if (members.size === 0) {
-    return interaction.editReply('❌ No eligible members found to DM.');
+    return interaction.editReply('❌ No eligible members found.');
   }
 
   const formattedMessage = [
@@ -107,12 +92,10 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  const targetLabel = target === 'everyone'
-    ? 'all server members'
-    : `**${interaction.options.getRole('role').name}** members`;
+  const targetLabel = role ? `**${role.name}** members` : 'all server members';
 
   await interaction.editReply(
-    `✅ Done! Announcement sent to ${targetLabel}.\n📬 **${sent}** delivered · ❌ **${failed}** couldn't be reached (DMs disabled)`
+    `✅ Done! Sent to ${targetLabel}.\n📬 **${sent}** delivered · ❌ **${failed}** couldn't be reached (DMs disabled)`
   );
 });
 
