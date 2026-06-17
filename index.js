@@ -9,7 +9,7 @@ const TOKEN      = process.env.DISCORD_TOKEN;
 const CLIENT_ID  = process.env.CLIENT_ID;
 const PUBLIC_KEY = process.env.PUBLIC_KEY;
 
-const OFFICER_ROLES   = ['junior officer', 'officer'];
+const OFFICER_ROLES   = ['junior officer perms', 'officer perms'];
 const POINTS_FILE     = './points.json';
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
